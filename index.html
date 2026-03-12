@@ -3,198 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deploy Pony: Enterprise Nightmares (Cartoon Edition!)</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Deploy Pony: Enterprise Nightmares</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>🐴</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Courier New', 'Consolas', monospace;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1035 40%, #2a1a4a 70%, #1a0a2a 100%);
+            color: #e8e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0;
+            animation: drift linear infinite;
+        }
+        @keyframes drift {
+            0% { opacity: 0; transform: translateY(100vh) rotate(0deg); }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { opacity: 0; transform: translateY(-20vh) rotate(360deg); }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .title {
+            font-size: clamp(28px, 5vw, 48px);
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00fff5, #ff69b4, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: clamp(12px, 2vw, 16px);
+            color: #8888aa;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .tagline {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #6b5b95;
+        }
+
+        /* Version cards grid */
+        .version-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 900px;
+            width: 90%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .version-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            padding: 30px 25px;
+            border-radius: 12px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .version-card:hover {
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        /* Classic card */
+        .classic-card {
+            background: #0a0a14;
+            border: 1px solid #00fff5;
+            box-shadow: 0 0 20px rgba(0, 255, 245, 0.1), inset 0 0 40px rgba(0, 255, 245, 0.03);
+        }
+        .classic-card:hover {
+            box-shadow: 0 0 40px rgba(0, 255, 245, 0.25), 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 255, 245, 0.05);
+            border-color: #00fff5;
+        }
+
+        /* Cartoon card */
+        .cartoon-card {
+            background: linear-gradient(145deg, #fff8f0, #fff0f5, #f0f0ff);
+            border: 2px solid #ff69b4;
+            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.15);
+        }
+        .cartoon-card:hover {
+            box-shadow: 0 8px 40px rgba(255, 105, 180, 0.3), 0 8px 30px rgba(0, 0, 0, 0.1);
+            border-color: #e74c9c;
+        }
+
+        /* Card preview area */
+        .card-preview {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .classic-card .card-preview {
+            background: linear-gradient(180deg, #0a0a1a, #1a1a2e);
+            border: 1px solid #3a3a5c;
+        }
+
+        .cartoon-card .card-preview {
+            background: linear-gradient(180deg, #87CEEB, #FFF8DC);
+            border: 2px solid #e8e0f0;
+        }
+
+        /* Card text */
+        .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .classic-card .card-title { color: #00fff5; text-shadow: 0 0 12px rgba(0, 255, 245, 0.4); }
+        .cartoon-card .card-title { color: #e74c9c; }
+
+        .card-desc {
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 40px;
+        }
+
+        .classic-card .card-desc { color: #8888aa; }
+        .cartoon-card .card-desc { color: #9b59b6; }
+
+        /* Play buttons */
+        .play-btn {
+            display: inline-block;
+            padding: 10px 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .classic-btn {
+            color: #00fff5;
+            border: 1px solid #00fff5;
+            background: transparent;
+        }
+        .classic-card:hover .classic-btn {
+            background: rgba(0, 255, 245, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 245, 0.3);
+        }
+
+        .cartoon-btn {
+            color: white;
+            border: 2px solid #e74c9c;
+            background: #ff69b4;
+            border-radius: 20px;
+        }
+        .cartoon-card:hover .cartoon-btn {
+            background: #e74c9c;
+            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+        }
+
+        /* Tags */
+        .card-tag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .classic-card .card-tag {
+            color: #00fff5;
+            border: 1px solid #00fff5;
+            background: rgba(0, 255, 245, 0.1);
+        }
+
+        .cartoon-card .card-tag {
+            color: #e74c9c;
+            border: 1px solid #ff69b4;
+            background: rgba(255, 105, 180, 0.1);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #4a3f6b;
+            font-size: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer a {
+            color: #6b5b95;
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .version-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+                width: 95%;
+            }
+            .card-preview { height: 140px; }
+            .header { margin-bottom: 30px; }
+            .footer { margin-top: 30px; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="game-container">
-    <!-- Vignette overlay -->
-    <div id="vignette"></div>
+    <header class="header">
+        <div class="title">DEPLOY PONY</div>
+        <div class="subtitle">Enterprise Nightmares</div>
+        <p class="tagline">Choose your deployment aesthetic</p>
+    </header>
 
-    <!-- Floating code particles (spawned by JS) -->
-    <div id="particles-container"></div>
-
-    <!-- ==================== LOADING SCREEN ==================== -->
-    <div id="loading-screen" class="game-screen active">
-        <div class="loading-content">
-            <div class="loading-title">[ DEPLOY PONY: ENTERPRISE NIGHTMARES ]</div>
-            <div class="loading-bar-container">
-                <div class="loading-bar"></div>
+    <main class="version-grid">
+        <!-- Classic / Dark Hollow Knight version -->
+        <a href="classic/index.html" class="version-card classic-card">
+            <span class="card-tag">Original</span>
+            <div class="card-preview">
+                <svg viewBox="-30 -50 120 110" width="120" height="110" xmlns="http://www.w3.org/2000/svg">
+                    <g>
+                        <animateTransform attributeName="transform" type="translate" values="0,0;0,-2;0,0" dur="2s" repeatCount="indefinite"/>
+                        <!-- Body -->
+                        <ellipse cx="30" cy="30" rx="28" ry="22" fill="#2e2245" stroke="#4a3f6b" stroke-width="1.5">
+                            <animate attributeName="ry" values="22;23;22" dur="2s" repeatCount="indefinite"/>
+                        </ellipse>
+                        <!-- Legs -->
+                        <line x1="10" y1="45" x2="10" y2="50" stroke="#4a3f6b" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="20" y1="45" x2="20" y2="52" stroke="#4a3f6b" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="40" y1="45" x2="40" y2="52" stroke="#4a3f6b" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="50" y1="45" x2="50" y2="50" stroke="#4a3f6b" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Head -->
+                        <ellipse cx="5" cy="10" rx="18" ry="16" fill="#2e2245" stroke="#4a3f6b" stroke-width="1.5"/>
+                        <!-- Horn -->
+                        <path d="M 5 -5 L 3 -22 L 7 -22 Z" fill="#3a3a5c" stroke="#00fff5" stroke-width="1"/>
+                        <circle cx="5" cy="-22" r="2.5" fill="#00fff5">
+                            <animate attributeName="r" values="2;3.5;2" dur="1s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite"/>
+                        </circle>
+                        <!-- Eye -->
+                        <ellipse cx="-2" cy="8" rx="4" ry="5" fill="#0a0a0f"/>
+                        <ellipse cx="-2" cy="8" rx="2.5" ry="3" fill="#00fff5">
+                            <animate attributeName="opacity" values="1;0.6;1" dur="2s" repeatCount="indefinite"/>
+                        </ellipse>
+                        <!-- Mane -->
+                        <path d="M 12,-2 Q 8,-10 15,-8 Q 10,-16 18,-12 Q 14,-20 20,-15" fill="none" stroke="#4a2875" stroke-width="4" stroke-linecap="round"/>
+                        <!-- Tail -->
+                        <path d="M 55,25 Q 65,15 70,25 Q 68,35 60,38" fill="none" stroke="#4a2875" stroke-width="4" stroke-linecap="round">
+                            <animateTransform attributeName="transform" type="rotate" values="0 55 30;5 55 30;0 55 30;-3 55 30;0 55 30" dur="3s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+                </svg>
             </div>
-            <div id="loading-text">Initializing AbstractSingletonProxyFactoryBean...</div>
-        </div>
-    </div>
+            <div class="card-title">Classic</div>
+            <p class="card-desc">Dark, atmospheric, neon-lit.<br>Hollow Knight meets Java deployment hell.</p>
+            <span class="play-btn classic-btn">> Enter the Void</span>
+        </a>
 
-    <!-- ==================== MENU SCREEN ==================== -->
-    <div id="menu-screen" class="game-screen">
-        <div class="menu-content">
-            <div class="menu-logo" id="menu-logo"></div>
-            <div class="menu-lore" id="menu-lore"></div>
-            <div class="menu-buttons">
-                <button class="menu-btn primary" onclick="Game.startNewGame()">
-                    > New Deployment
-                </button>
-                <button class="menu-btn" id="continue-btn" onclick="Game.continueGame()" style="display:none">
-                    > Resume Deployment
-                </button>
+        <!-- Cartoon / Bright version -->
+        <a href="cartoon/index.html" class="version-card cartoon-card">
+            <span class="card-tag">New!</span>
+            <div class="card-preview">
+                <svg viewBox="-30 -55 130 130" width="130" height="120" xmlns="http://www.w3.org/2000/svg">
+                    <g>
+                        <animateTransform attributeName="transform" type="translate" values="0,0;0,-5;0,0" dur="1.2s" repeatCount="indefinite"/>
+                        <!-- Body -->
+                        <ellipse cx="30" cy="30" rx="30" ry="25" fill="#FFB6D9" stroke="#E89AC5" stroke-width="2.5">
+                            <animate attributeName="ry" values="25;27;25" dur="1.2s" repeatCount="indefinite"/>
+                        </ellipse>
+                        <!-- Legs -->
+                        <line x1="8" y1="48" x2="8" y2="53" stroke="#E89AC5" stroke-width="5" stroke-linecap="round"/>
+                        <line x1="22" y1="48" x2="22" y2="55" stroke="#E89AC5" stroke-width="5" stroke-linecap="round"/>
+                        <line x1="38" y1="48" x2="38" y2="55" stroke="#E89AC5" stroke-width="5" stroke-linecap="round"/>
+                        <line x1="52" y1="48" x2="52" y2="53" stroke="#E89AC5" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="8" cy="56" r="4" fill="#E89AC5"/>
+                        <circle cx="22" cy="58" r="4" fill="#E89AC5"/>
+                        <circle cx="38" cy="58" r="4" fill="#E89AC5"/>
+                        <circle cx="52" cy="56" r="4" fill="#E89AC5"/>
+                        <!-- Head -->
+                        <ellipse cx="3" cy="8" rx="22" ry="20" fill="#FFB6D9" stroke="#E89AC5" stroke-width="2.5"/>
+                        <!-- Blush -->
+                        <ellipse cx="12" cy="16" rx="5" ry="3" fill="#FF9999" opacity="0.5"/>
+                        <ellipse cx="-8" cy="16" rx="5" ry="3" fill="#FF9999" opacity="0.5"/>
+                        <!-- Horn -->
+                        <path d="M 3 -10 L 0 -30 L 6 -30 Z" fill="#FFD700" stroke="#DAA520" stroke-width="1.5"/>
+                        <text x="3" y="-32" text-anchor="middle" font-size="10">
+                            ✨
+                            <animate attributeName="opacity" values="1;0.4;1" dur="0.8s" repeatCount="indefinite"/>
+                        </text>
+                        <!-- Eye (big anime!) -->
+                        <ellipse cx="-5" cy="5" rx="7" ry="8" fill="white" stroke="#E89AC5" stroke-width="1"/>
+                        <ellipse cx="-4" cy="5" rx="4" ry="5" fill="#5DADE2"/>
+                        <ellipse cx="-3" cy="4" rx="2" ry="2.5" fill="#222"/>
+                        <ellipse cx="-2" cy="2" rx="1.5" ry="1.5" fill="white" opacity="0.9"/>
+                        <!-- Mouth -->
+                        <path d="M -4 18 Q 1 22 6 18" fill="none" stroke="#E89AC5" stroke-width="1.5" stroke-linecap="round"/>
+                        <!-- Mane (rainbow!) -->
+                        <path d="M 14,0 Q 10,-12 16,-8 Q 12,-20 20,-14 Q 16,-26 22,-18" fill="none" stroke="#E74C9C" stroke-width="5" stroke-linecap="round"/>
+                        <path d="M 16,2 Q 12,-10 18,-6 Q 14,-18 22,-12" fill="none" stroke="#5DADE2" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 18,4 Q 14,-8 20,-4 Q 16,-16 24,-10" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Tail -->
+                        <path d="M 57,22 Q 68,10 75,20 Q 72,32 65,38" fill="none" stroke="#E74C9C" stroke-width="5" stroke-linecap="round">
+                            <animateTransform attributeName="transform" type="rotate" values="0 55 30;8 55 30;0 55 30;-5 55 30;0 55 30" dur="2s" repeatCount="indefinite"/>
+                        </path>
+                        <!-- Sparkles -->
+                        <text x="-20" y="-30" font-size="10" opacity="0">⭐<animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/></text>
+                        <text x="40" y="-20" font-size="8" opacity="0">💖<animate attributeName="opacity" values="0;1;0" dur="1.8s" begin="0.3s" repeatCount="indefinite"/></text>
+                        <text x="5" y="-42" font-size="9" opacity="0">🌟<animate attributeName="opacity" values="0;1;0" dur="1.3s" begin="0.6s" repeatCount="indefinite"/></text>
+                    </g>
+                </svg>
             </div>
-            <div class="menu-subtitle">
-                A Super Cute Cartoon Java Deployment Simulator 🐴✨<br>
-                © 2024 AbstractSingletonProxyFactoryBean LLC
-            </div>
-        </div>
-    </div>
+            <div class="card-title">Cartoon Edition</div>
+            <p class="card-desc">Bright pastels, bouncy physics, super cute.<br>Same nightmares, more sparkles!</p>
+            <span class="play-btn cartoon-btn">Play!</span>
+        </a>
+    </main>
 
-    <!-- ==================== CARE SCREEN ==================== -->
-    <div id="care-screen" class="game-screen">
-        <div class="care-header">
-            <span class="care-title">[ PONY CARE TERMINAL ]</span>
-            <div class="care-controls">
-                <button class="icon-btn" onclick="Audio.toggleMute()" title="Toggle Sound">SND</button>
-                <button class="icon-btn" onclick="Game.save()" title="Save">SAVE</button>
-                <button class="icon-btn" onclick="Game.setState(Game.STATES.MENU)" title="Menu">MENU</button>
-            </div>
-        </div>
+    <footer class="footer">
+        <p>&copy; 2024 AbstractSingletonProxyFactoryBean LLC</p>
+        <p style="margin-top:6px">A Java Deployment Simulator. May your heap never overflow.</p>
+    </footer>
 
-        <div class="pony-area">
-            <div id="dialogue-bubble"></div>
-            <div id="pony-display"></div>
-            <div id="poop-container"></div>
-        </div>
-
-        <div class="stats-area">
-            <div id="pony-stats"></div>
-        </div>
-
-        <div class="actions-area" id="pony-actions"></div>
-
-        <div class="event-log-area">
-            <div id="event-log"></div>
-        </div>
-    </div>
-
-    <!-- ==================== RIDE SCREEN ==================== -->
-    <div id="ride-screen" class="game-screen">
-        <canvas id="ride-canvas"></canvas>
-        <div id="ride-zone"></div>
-    </div>
-
-    <!-- ==================== DEPLOY MINI-GAME SCREEN ==================== -->
-    <div id="deploy-screen" class="game-screen">
-        <div id="deploy-game-area"></div>
-    </div>
-
-    <!-- ==================== GAME OVER SCREEN ==================== -->
-    <div id="gameover-screen" class="game-screen">
-        <div class="gameover-content">
-            <div class="gameover-title">BUILD FAILED</div>
-            <div class="gameover-message" id="gameover-message"></div>
-            <div class="gameover-stats" id="gameover-stats"></div>
-            <div class="gameover-score" id="gameover-score"></div>
-            <div class="menu-buttons">
-                <button class="menu-btn primary" onclick="Game.restartGame()">
-                    > Redeploy from Scratch
-                </button>
-                <button class="menu-btn" onclick="Game.setState(Game.STATES.MENU)">
-                    > Return to Main Menu
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Scripts -->
-<script src="art.js"></script>
-<script src="audio.js"></script>
-<script src="game.js"></script>
-<script src="pony-care.js"></script>
-<script src="pony-ride.js"></script>
-<script src="deploy-games.js"></script>
-<script>
-    // ---- INITIALIZATION ----
-    document.addEventListener('DOMContentLoaded', () => {
-        // Spawn floating code particles in the background
-        const particlesContainer = document.getElementById('particles-container');
+    <script>
+        // Floating particles background
+        const body = document.body;
+        const particles = ['null', 'void', '@Bean', ';', '.war', '✨', '🐴', 'static', '{  }', '💜', 'pom.xml'];
         function spawnParticle() {
             const el = document.createElement('div');
-            el.className = 'floating-code';
-            el.textContent = Art.createFloatingCode();
-            el.style.top = (Math.random() * 70 + 5) + '%';
-            el.style.animationDuration = (12 + Math.random() * 10) + 's';
+            el.className = 'particle';
+            el.textContent = particles[Math.floor(Math.random() * particles.length)];
+            el.style.left = (Math.random() * 95 + 2) + '%';
+            el.style.fontSize = (10 + Math.random() * 8) + 'px';
+            el.style.color = ['#00fff5', '#ff69b4', '#ffd700', '#6b5b95', '#4a3f6b'][Math.floor(Math.random() * 5)];
+            el.style.animationDuration = (10 + Math.random() * 15) + 's';
             el.style.animationDelay = (Math.random() * 5) + 's';
-            el.style.fontSize = (8 + Math.random() * 6) + 'px';
-            particlesContainer.appendChild(el);
-            el.addEventListener('animationend', () => el.remove());
+            body.appendChild(el);
+            el.addEventListener('animationiteration', () => {
+                el.style.left = (Math.random() * 95 + 2) + '%';
+            });
+            setTimeout(() => el.remove(), 30000);
         }
-
-        setInterval(spawnParticle, 2000);
-        for (let i = 0; i < 8; i++) spawnParticle();
-
-        // Setup menu
-        Game.on('stateChange', ({ to }) => {
-            if (to === Game.STATES.MENU) {
-                setupMenu();
-            }
-            if (to === Game.STATES.GAME_OVER) {
-                setupGameOver();
-            }
-        });
-
-        // Initialize pony care module
-        PonyCare.init();
-
-        // Start!
-        Game.init();
-
-        // Resume context on first click (for audio)
-        document.addEventListener('click', () => {
-            Audio.init();
-        }, { once: true });
-    });
-
-    function setupMenu() {
-        // Logo
-        const logoEl = document.getElementById('menu-logo');
-        if (logoEl) logoEl.innerHTML = Art.titleLogo();
-
-        // Lore
-        const loreEl = document.getElementById('menu-lore');
-        if (loreEl) {
-            loreEl.innerHTML = Game.getLore().map(line => `<p>${line}</p>`).join('');
-        }
-
-        // Show continue button if save exists
-        const continueBtn = document.getElementById('continue-btn');
-        if (continueBtn) {
-            continueBtn.style.display = Game.load() ? 'block' : 'none';
-        }
-    }
-
-    function setupGameOver() {
-        const msgEl = document.getElementById('gameover-message');
-        const statsEl = document.getElementById('gameover-stats');
-        const scoreEl = document.getElementById('gameover-score');
-
-        if (msgEl) msgEl.textContent = Game.getDeathMessage();
-
-        if (statsEl) {
-            const pony = Game.getPony();
-            statsEl.innerHTML = `
-                Pony: ${pony ? pony.name : 'Unknown'}<br>
-                Enterprise Level: ${pony ? pony.level : 0}<br>
-                Total Deployments: ${Game.getTotalDeploys()}<br>
-                Failed Deployments: ${Game.getFailedDeploys()}<br>
-                Exceptions Encountered: ${pony ? pony.exceptions.length : 0}
-            `;
-        }
-
-        if (scoreEl) {
-            scoreEl.textContent = `Enterprise Value Generated: $${Game.getScore().toLocaleString()}.00 (before consulting fees)`;
-        }
-    }
-</script>
-
+        for (let i = 0; i < 12; i++) spawnParticle();
+        setInterval(spawnParticle, 3000);
+    </script>
 </body>
 </html>
