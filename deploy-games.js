@@ -124,29 +124,33 @@ const DeployGames = (() => {
             const w = canvas.width;
             const h = canvas.height;
 
-            // Background
-            ctx.fillStyle = Art.PALETTE.void;
+            // Background (bright sky!)
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#87CEEB');
+            grad.addColorStop(1, '#FFF8DC');
+            ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            // Ground
-            ctx.fillStyle = Art.PALETTE.darkGrey;
+            // Ground (green grass!)
+            ctx.fillStyle = '#5CBF3A';
             ctx.fillRect(0, h - 30, w, 30);
-            ctx.strokeStyle = Art.PALETTE.purple;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#4AAF2A';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, h - 30);
             ctx.lineTo(w, h - 30);
             ctx.stroke();
 
-            // Catapult base
-            ctx.fillStyle = '#3a2a1a';
+            // Catapult base (bright wood!)
+            ctx.fillStyle = '#DEB887';
             ctx.fillRect(50, h - 60, 60, 30);
-            ctx.strokeStyle = Art.PALETTE.orange;
+            ctx.strokeStyle = '#C4A06A';
+            ctx.lineWidth = 2;
             ctx.strokeRect(50, h - 60, 60, 30);
 
             // Trajectory preview (if not launched)
             if (!launched) {
-                ctx.strokeStyle = Art.PALETTE.cyan;
+                ctx.strokeStyle = '#FF69B4';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]);
                 ctx.beginPath();
@@ -167,13 +171,13 @@ const DeployGames = (() => {
                 ctx.setLineDash([]);
             }
 
-            // Target (Tomcat)
-            ctx.fillStyle = Art.PALETTE.darkGrey;
-            ctx.strokeStyle = Art.PALETTE.grey;
+            // Target (Tomcat - bright!)
+            ctx.fillStyle = '#FFF5EE';
+            ctx.strokeStyle = '#FFA500';
             ctx.lineWidth = 2;
             ctx.fillRect(targetX - targetW / 2, h - 90, targetW, 60);
             ctx.strokeRect(targetX - targetW / 2, h - 90, targetW, 60);
-            ctx.fillStyle = Art.PALETTE.orange;
+            ctx.fillStyle = '#FFA500';
             ctx.font = 'bold 12px monospace';
             ctx.textAlign = 'center';
             ctx.fillText('TOMCAT', targetX, h - 65);
@@ -181,7 +185,7 @@ const DeployGames = (() => {
             ctx.fillText('🐱', targetX, h - 42);
 
             // Landing zone
-            ctx.strokeStyle = Art.PALETTE.cyan;
+            ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 1;
             ctx.setLineDash([3, 3]);
             ctx.strokeRect(targetX - targetW / 2, h - 100, targetW, 12);
@@ -199,14 +203,20 @@ const DeployGames = (() => {
                     const hit = Math.abs(warX - targetX) < targetW / 2 + 10;
 
                     if (hit) {
-                        ctx.fillStyle = Art.PALETTE.green;
-                        ctx.font = 'bold 18px monospace';
-                        ctx.fillText('DEPLOYED! ✓', w / 2, h / 2);
+                        ctx.fillStyle = '#32CD32';
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 3;
+                        ctx.font = 'bold 20px monospace';
+                        ctx.strokeText('YAY! DEPLOYED! 🎉', w / 2, h / 2);
+                        ctx.fillText('YAY! DEPLOYED! 🎉', w / 2, h / 2);
                         setTimeout(() => endGame(true), 1200);
                     } else {
-                        ctx.fillStyle = Art.PALETTE.red;
+                        ctx.fillStyle = '#FF4444';
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 3;
                         ctx.font = 'bold 18px monospace';
-                        ctx.fillText('MISSED! 404 Not Found', w / 2, h / 2);
+                        ctx.strokeText('Oops! 404 Not Found! 😅', w / 2, h / 2);
+                        ctx.fillText('Oops! 404 Not Found! 😅', w / 2, h / 2);
                         setTimeout(() => endGame(false), 1200);
                     }
                 }
@@ -215,12 +225,12 @@ const DeployGames = (() => {
             if (!landed || !launched) {
                 const drawX = launched ? warX : 80;
                 const drawY = launched ? warY : h - 65;
-                ctx.fillStyle = '#3a2a1a';
-                ctx.strokeStyle = Art.PALETTE.orange;
-                ctx.lineWidth = 1.5;
+                ctx.fillStyle = '#FFE4B5';
+                ctx.strokeStyle = '#FFA500';
+                ctx.lineWidth = 2;
                 ctx.fillRect(drawX - 12, drawY - 15, 24, 30);
                 ctx.strokeRect(drawX - 12, drawY - 15, 24, 30);
-                ctx.fillStyle = Art.PALETTE.orange;
+                ctx.fillStyle = '#FFA500';
                 ctx.font = 'bold 8px monospace';
                 ctx.textAlign = 'center';
                 ctx.fillText('.war', drawX, drawY + 2);

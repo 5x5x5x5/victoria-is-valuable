@@ -24,34 +24,34 @@ const Game = (() => {
     ];
 
     const LORE = [
-        "In the dark caverns beneath the Data Center, a pony stirs...",
-        "It has been 47 sprints since the last successful deployment.",
-        "The XML configs grow restless. The ClassPath hungers.",
-        "Only you, DevOps Knight, can save AbstractSingletonProxyFactoryBean.",
-        "Mount your pony. Configure your beans. Deploy to production.",
-        "May your heap never overflow.",
+        "Once upon a time, in a sparkly meadow full of server racks...",
+        "A magical pony dreamed of deploying the perfect Java application!",
+        "But oh no! The XML configs were all jumbled up! What a silly mess!",
+        "Only YOU, the bravest DevOps adventurer, can help!",
+        "Saddle up your pony! Feed it beans! Deploy to production!",
+        "Let the most adorable enterprise nightmare begin! 🐴✨",
     ];
 
     const DEATH_MESSAGES = [
-        "Your pony threw an uncaught exception and has been garbage collected.",
-        "Application server has stopped responding. Have you tried turning your pony off and on again?",
-        "Fatal: AbstractSingletonProxyFactoryBean has encountered a segfault in the hay module.",
-        "BUILD FAILED. Your pony could not resolve dependency: love:love:LATEST.",
-        "java.lang.PonyStarvedException: No XML beans found in classpath.",
-        "CRITICAL: Pony heap space exhausted. Too many stack traces consumed.",
+        "Oopsie! Your pony tripped over a NullPointerException! Silly pony! 🐴💫",
+        "Oh no! The application server fell asleep! Quick, tickle it awake! 😴",
+        "Whoopsie-daisy! AbstractSingletonProxyFactoryBean got tangled in its own name!",
+        "BUILD FAILED... but your pony still loves you! Try again? 💖",
+        "java.lang.PonyHungryException: Feed me more XML cookies please! 🍪",
+        "Bonk! Pony bumped into a heap overflow! That's a LOT of memories! 💭",
     ];
 
     const RANDOM_EVENTS = [
-        { text: "A wild ConcurrentModificationException appeared!", stat: 'happiness', delta: -10 },
-        { text: "Someone pushed to main without a PR! Pony is stressed.", stat: 'happiness', delta: -8 },
-        { text: "Free donuts in the break room! Pony found a Spring Bean.", stat: 'hunger', delta: 15 },
-        { text: "Jenkins build passed on first try! A miracle!", stat: 'happiness', delta: 20 },
-        { text: "JIRA ticket assigned: Refactor legacy pony grooming module.", stat: 'cleanliness', delta: -12 },
-        { text: "Memory leak detected in pony's dream subsystem.", stat: 'energy', delta: -15 },
-        { text: "New Gradle plugin available: pony-care-optimizer v0.0.1-SNAPSHOT", stat: 'happiness', delta: 5 },
-        { text: "Friday deploy detected. Pony judges you silently.", stat: 'happiness', delta: -5 },
-        { text: "Hot-fix deployed successfully! Pony does a little dance.", stat: 'happiness', delta: 15 },
-        { text: "OutOfMemoryError in the barn. Pony needs more -Xmx.", stat: 'energy', delta: -20 },
+        { text: "Eek! A wild ConcurrentModificationException popped up! 😱", stat: 'happiness', delta: -10 },
+        { text: "Someone pushed to main without a PR! Pony gasps dramatically! 😮", stat: 'happiness', delta: -8 },
+        { text: "Yay! Free donuts AND a Spring Bean! Best day ever! 🍩", stat: 'hunger', delta: 15 },
+        { text: "Jenkins build passed on first try! Pony does a happy dance! 💃", stat: 'happiness', delta: 20 },
+        { text: "New JIRA ticket! Pony grooming module needs sparkles! ✨", stat: 'cleanliness', delta: -12 },
+        { text: "Oh dear! A memory leak in pony's dream bubble! 💭💧", stat: 'energy', delta: -15 },
+        { text: "Ooh! New Gradle plugin: pony-sparkle-optimizer! Fancy! 🌟", stat: 'happiness', delta: 5 },
+        { text: "Friday deploy detected! Pony gives you the puppy eyes... 🥺", stat: 'happiness', delta: -5 },
+        { text: "Hot-fix deployed! Pony prances around with joy! 🎉", stat: 'happiness', delta: 15 },
+        { text: "OutOfMemoryError in the barn! Too many sparkles! ✨💥", stat: 'energy', delta: -20 },
     ];
 
     let currentState = STATES.LOADING;

@@ -1,6 +1,6 @@
 // ============================================================
-// pony-ride.js — Side-Scrolling Runner through Server Caverns
-// Ride your pony through the dark infrastructure of production
+// pony-ride.js — Side-Scrolling Runner through Server Meadows
+// CARTOON EDITION — Bright skies, green hills, bouncy physics!
 // ============================================================
 
 const PonyRide = (() => {
@@ -19,12 +19,13 @@ const PonyRide = (() => {
     let speed = 3;
     let collected = 0;
     let alive = true;
+    let squashTimer = 0; // for squash-and-stretch on landing
 
     // World
-    const GROUND_Y = 0.75; // fraction of canvas height
+    const GROUND_Y = 0.75;
     let obstacles = [];
     let collectibles = [];
-    let bgElements = []; // server racks, cables
+    let bgElements = [];
     let particles = [];
     let boss = null;
     let bossActive = false;
@@ -32,9 +33,12 @@ const PonyRide = (() => {
     let bossMaxHP = 0;
     let nextBossAt = 800;
 
+    // Background hills (pre-generated)
+    let hills = [];
+
     const OBSTACLE_TYPES = ['ClassNotFoundException', 'OutOfMemoryError', 'StackOverflow', 'ConcurrentModification'];
     const COLLECTIBLE_TYPES = ['jar', 'bean', 'gradle', 'semicolon'];
-    const ZONE_NAMES = ['The Tomcat Tunnels', 'WebSphere Wastes', 'JBoss Jungle', 'The Docker Depths'];
+    const ZONE_NAMES = ['The Tomcat Meadows', 'WebSphere Wonderland', 'JBoss Jungle Gym', 'The Docker Playground'];
 
     let currentZone = 0;
     let clopTimer = 0;
@@ -55,6 +59,7 @@ const PonyRide = (() => {
         speed = 3;
         collected = 0;
         alive = true;
+        squashTimer = 0;
         obstacles = [];
         collectibles = [];
         bgElements = [];
@@ -65,14 +70,28 @@ const PonyRide = (() => {
         currentZone = 0;
         clopTimer = 0;
 
-        // Pre-populate background
-        for (let i = 0; i < 15; i++) {
+        // Pre-populate background clouds
+        for (let i = 0; i < 12; i++) {
             bgElements.push({
                 x: Math.random() * canvas.width * 2,
-                layer: Math.floor(Math.random() * 3), // 0=far, 1=mid, 2=near
-                type: 'rack',
-                height: 60 + Math.random() * 80,
+                layer: Math.floor(Math.random() * 3),
+                type: 'cloud',
+                height: 40 + Math.random() * 50,
             });
+        }
+
+        // Pre-generate rolling hills
+        hills = [];
+        for (let i = 0; i < 3; i++) {
+            const hillLayer = [];
+            for (let j = 0; j < 8; j++) {
+                hillLayer.push({
+                    x: j * 200 + Math.random() * 100,
+                    width: 120 + Math.random() * 100,
+                    height: 30 + Math.random() * 40 + i * 15,
+                });
+            }
+            hills.push(hillLayer);
         }
 
         setupInput();
@@ -109,7 +128,6 @@ const PonyRide = (() => {
             if (e.code === 'Escape') {
                 endRide(false);
             }
-            // Attack boss with X or Z
             if ((e.code === 'KeyX' || e.code === 'KeyZ') && bossActive && boss) {
                 attackBoss();
             }
@@ -144,7 +162,7 @@ const PonyRide = (() => {
 
     function jump() {
         if (!grounded || !alive) return;
-        ponyVelY = -12;
+        ponyVelY = -13; // slightly higher jump for cartoon feel
         grounded = false;
         Audio.jump();
     }
@@ -153,7 +171,6 @@ const PonyRide = (() => {
         if (!bossActive || !boss) return;
         bossHP -= 10;
         Audio.click();
-        // Knockback particles
         for (let i = 0; i < 5; i++) {
             particles.push({
                 x: boss.x - 30,
@@ -161,7 +178,7 @@ const PonyRide = (() => {
                 vx: -2 - Math.random() * 3,
                 vy: (Math.random() - 0.5) * 4,
                 life: 30,
-                text: '💥',
+                text: ['💥', '⭐', '💫', '✨', '🌟'][Math.floor(Math.random() * 5)],
             });
         }
         if (bossHP <= 0) {
@@ -176,15 +193,14 @@ const PonyRide = (() => {
         Game.addXP(50);
         collected += 10;
 
-        // Victory particles
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 25; i++) {
             particles.push({
                 x: boss.x,
                 y: boss.y,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
                 life: 60,
-                text: ['🎉', '✨', '🚀', ';'][Math.floor(Math.random() * 4)],
+                text: ['🎉', '✨', '🚀', '🌈', '⭐', '💖'][Math.floor(Math.random() * 6)],
             });
         }
 
@@ -208,29 +224,29 @@ const PonyRide = (() => {
         const groundY = canvas.height * GROUND_Y;
         distance += speed;
 
-        // Clop sounds
         clopTimer++;
         if (clopTimer > 15 && grounded) {
             Audio.clipClop();
             clopTimer = 0;
         }
 
-        // Physics
+        // Physics (slightly floatier for cartoon)
         if (!grounded) {
-            ponyVelY += 0.6; // gravity
+            ponyVelY += 0.5; // slightly less gravity
             ponyY += ponyVelY;
             if (ponyY >= 0) {
                 ponyY = 0;
                 ponyVelY = 0;
                 grounded = true;
+                squashTimer = 8; // trigger squash on landing
             }
         }
 
-        // Speed increases over time
-        speed = 3 + distance * 0.001;
-        if (bossActive) speed = 1; // Slow down for boss
+        if (squashTimer > 0) squashTimer--;
 
-        // Zone progression
+        speed = 3 + distance * 0.001;
+        if (bossActive) speed = 1;
+
         const newZone = Math.min(3, Math.floor(distance / 2000));
         if (newZone !== currentZone) {
             currentZone = newZone;
@@ -273,20 +289,29 @@ const PonyRide = (() => {
             Audio.bossWarning();
         }
 
-        // Move background elements
+        // Move background
         bgElements.forEach(bg => {
-            const parallaxSpeed = [0.3, 0.6, 1.0][bg.layer];
+            const parallaxSpeed = [0.2, 0.4, 0.7][bg.layer];
             bg.x -= speed * parallaxSpeed;
-            if (bg.x < -50) {
+            if (bg.x < -80) {
                 bg.x = canvas.width + 50 + Math.random() * 200;
             }
         });
 
-        // Move obstacles
+        // Move hills
+        hills.forEach((layer, i) => {
+            const hillSpeed = [0.15, 0.3, 0.6][i];
+            layer.forEach(hill => {
+                hill.x -= speed * hillSpeed;
+                if (hill.x + hill.width < -50) {
+                    hill.x += layer.length * 200 + Math.random() * 100;
+                }
+            });
+        });
+
         obstacles.forEach(o => { o.x -= speed; });
         obstacles = obstacles.filter(o => o.x > -60);
 
-        // Move collectibles
         collectibles.forEach(c => { c.x -= speed; });
         collectibles = collectibles.filter(c => c.x > -30);
 
@@ -296,7 +321,6 @@ const PonyRide = (() => {
         const ponyW = ducking ? 35 : 30;
         const ponyH = ducking ? 20 : 40;
 
-        // Obstacle collisions
         for (const o of obstacles) {
             if (ponyX + ponyW > o.x && ponyX < o.x + o.width &&
                 ponyActualY + ponyH > o.y && ponyActualY < o.y + o.height) {
@@ -305,20 +329,18 @@ const PonyRide = (() => {
             }
         }
 
-        // Collectible collisions
         collectibles = collectibles.filter(c => {
             if (Math.abs(ponyX - c.x) < 25 && Math.abs(ponyActualY - c.y) < 25) {
                 Audio.collect();
                 collected++;
                 Game.addScore(25);
-                // Spawn sparkle particles
-                for (let i = 0; i < 3; i++) {
+                for (let i = 0; i < 5; i++) {
                     particles.push({
                         x: c.x, y: c.y,
-                        vx: (Math.random() - 0.5) * 4,
-                        vy: -2 - Math.random() * 3,
-                        life: 20,
-                        text: '✦',
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: -2 - Math.random() * 4,
+                        life: 25,
+                        text: ['⭐', '✨', '💫'][Math.floor(Math.random() * 3)],
                     });
                 }
                 return false;
@@ -326,7 +348,6 @@ const PonyRide = (() => {
             return true;
         });
 
-        // Update particles
         particles.forEach(p => {
             p.x += p.vx;
             p.y += p.vy;
@@ -334,13 +355,13 @@ const PonyRide = (() => {
         });
         particles = particles.filter(p => p.life > 0);
 
-        // Spawn floating code particles
-        if (Math.random() < 0.05) {
+        // Spawn floating confetti
+        if (Math.random() < 0.06) {
             particles.push({
                 x: canvas.width + 20,
-                y: Math.random() * canvas.height * 0.6,
-                vx: -1 - Math.random(),
-                vy: (Math.random() - 0.5) * 0.5,
+                y: Math.random() * canvas.height * 0.5,
+                vx: -0.8 - Math.random() * 0.5,
+                vy: 0.5 + Math.random() * 0.5,
                 life: 200,
                 text: Art.createFloatingCode(),
                 isCode: true,
@@ -354,7 +375,17 @@ const PonyRide = (() => {
         Game.addException(cause);
         Game.modifyStat('energy', -15);
 
-        // Show death overlay
+        // Cartoon crash particles
+        for (let i = 0; i < 10; i++) {
+            particles.push({
+                x: 80, y: canvas.height * GROUND_Y - 30,
+                vx: (Math.random() - 0.5) * 8,
+                vy: -3 - Math.random() * 5,
+                life: 40,
+                text: ['💫', '⭐', '😵', '💥', '🌀'][Math.floor(Math.random() * 5)],
+            });
+        }
+
         setTimeout(() => {
             endRide(true);
         }, 1500);
@@ -363,7 +394,6 @@ const PonyRide = (() => {
     function endRide(died) {
         stop();
 
-        // Apply rewards
         const linesDeployed = Math.floor(distance);
         Game.addXP(Math.floor(distance / 50));
         if (collected > 0) {
@@ -379,84 +409,130 @@ const PonyRide = (() => {
         Game.incrementDeploys();
         if (died) Game.incrementFailedDeploys();
 
-        // Return to care mode
         Game.setState(Game.STATES.CARE);
         PonyCare.logEvent(
             died
-                ? `Ride crashed after ${linesDeployed} LOC. Collected ${collected} dependencies.`
-                : `Ride complete! ${linesDeployed} LOC deployed. Collected ${collected} dependencies.`,
+                ? `Oopsie! Ride crashed after ${linesDeployed} LOC. Collected ${collected} goodies!`
+                : `Yay! Ride complete! ${linesDeployed} LOC deployed. Collected ${collected} goodies!`,
             died ? 'error' : 'success'
         );
         PonyCare.updateStats();
     }
 
-    // ---- RENDERING ----
+    // ---- RENDERING (CARTOON!) ----
     function render() {
         if (!ctx) return;
         const w = canvas.width;
         const h = canvas.height;
         const groundY = h * GROUND_Y;
 
-        // Clear with dark background
-        ctx.fillStyle = Art.PALETTE.void;
-        ctx.fillRect(0, 0, w, h);
-
-        // Background gradient (dark atmospheric)
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, '#0a0a1a');
-        grad.addColorStop(0.4, '#0f0f2a');
-        grad.addColorStop(1, '#1a1a2e');
+        // Bright sky gradient!
+        const grad = ctx.createLinearGradient(0, 0, 0, groundY);
+        grad.addColorStop(0, '#87CEEB'); // sky blue
+        grad.addColorStop(0.5, '#B0E0FF');
+        grad.addColorStop(1, '#FFF8DC'); // cornsilk near horizon
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
-        // Background server racks (parallax)
+        // Sun (cheerful!)
+        ctx.fillStyle = '#FFE44D';
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 30;
+        ctx.beginPath();
+        ctx.arc(w - 80, 60, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Sun rays
+        ctx.strokeStyle = 'rgba(255, 228, 77, 0.3)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2 + frame * 0.005;
+            ctx.beginPath();
+            ctx.moveTo(w - 80 + Math.cos(angle) * 35, 60 + Math.sin(angle) * 35);
+            ctx.lineTo(w - 80 + Math.cos(angle) * 50, 60 + Math.sin(angle) * 50);
+            ctx.stroke();
+        }
+
+        // Background clouds (parallax)
         bgElements.forEach(bg => {
-            const alpha = [0.15, 0.3, 0.5][bg.layer];
+            const alpha = [0.4, 0.6, 0.85][bg.layer];
+            const cloudY = 30 + bg.layer * 40 + Math.sin(frame * 0.01 + bg.x) * 5;
             ctx.globalAlpha = alpha;
-            Art.drawServerRack(ctx, bg.x, groundY - bg.height, bg.height);
+            Art.drawServerRack(ctx, bg.x, cloudY, bg.height); // draws clouds now
             ctx.globalAlpha = 1;
         });
 
-        // Cables across the ceiling
-        ctx.strokeStyle = Art.PALETTE.grey;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.3;
-        for (let i = 0; i < 5; i++) {
-            const offset = (frame * 0.5 + i * 200) % (w + 400) - 200;
-            ctx.beginPath();
-            ctx.moveTo(offset, 0);
-            ctx.quadraticCurveTo(offset + 50, 30 + Math.sin(frame * 0.02 + i) * 10, offset + 100, 0);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
+        // Rolling hills (3 layers, parallax)
+        const hillColors = [
+            ['#8FD08F', '#7BC07B'], // far - light green
+            ['#6BB86B', '#5CA85C'], // mid - medium green
+            ['#5CBF3A', '#4AAF2A'], // near - bright green
+        ];
+        hills.forEach((layer, i) => {
+            layer.forEach(hill => {
+                Art.drawHill(ctx, hill.x, groundY + 8, hill.width, hill.height, hillColors[i][0]);
+                // Highlight
+                Art.drawHill(ctx, hill.x - 5, groundY + 8, hill.width * 0.7, hill.height * 0.6, hillColors[i][1]);
+            });
+        });
 
-        // Ground
-        ctx.fillStyle = Art.PALETTE.darkGrey;
-        ctx.fillRect(0, groundY + 10, w, h - groundY);
-        ctx.strokeStyle = Art.PALETTE.purple;
-        ctx.lineWidth = 2;
+        // Bunting/garlands across the top
+        for (let i = 0; i < 4; i++) {
+            const offset = (frame * 0.3 + i * 250) % (w + 400) - 200;
+            Art.drawCable(ctx, offset, 15, offset + 120, 15);
+        }
+
+        // Ground (bright green with grass!)
+        ctx.fillStyle = '#5CBF3A';
+        ctx.fillRect(0, groundY + 8, w, h - groundY);
+
+        // Grass top edge (wavy)
+        ctx.fillStyle = '#6DD04A';
         ctx.beginPath();
-        ctx.moveTo(0, groundY + 10);
-        ctx.lineTo(w, groundY + 10);
-        ctx.stroke();
+        ctx.moveTo(0, groundY + 8);
+        for (let x = 0; x < w; x += 20) {
+            const grassY = groundY + 5 + Math.sin((x + frame * speed * 0.5) * 0.05) * 3;
+            ctx.lineTo(x, grassY);
+        }
+        ctx.lineTo(w, groundY + 15);
+        ctx.lineTo(0, groundY + 15);
+        ctx.closePath();
+        ctx.fill();
 
-        // Ground pattern (circuit-like)
-        ctx.strokeStyle = Art.PALETTE.grey;
-        ctx.lineWidth = 0.5;
-        ctx.globalAlpha = 0.2;
-        for (let x = -(frame * speed) % 40; x < w; x += 40) {
+        // Grass tufts
+        ctx.strokeStyle = '#4AAF2A';
+        ctx.lineWidth = 1.5;
+        for (let x = -(frame * speed * 0.8) % 30; x < w; x += 30) {
+            const baseY = groundY + 10;
             ctx.beginPath();
-            ctx.moveTo(x, groundY + 10);
-            ctx.lineTo(x, h);
+            ctx.moveTo(x, baseY);
+            ctx.lineTo(x - 3, baseY - 8);
+            ctx.moveTo(x, baseY);
+            ctx.lineTo(x + 2, baseY - 6);
+            ctx.moveTo(x, baseY);
+            ctx.lineTo(x + 5, baseY - 7);
             ctx.stroke();
         }
-        ctx.globalAlpha = 1;
 
-        // Code particles (background)
+        // Flowers in the ground
+        const flowerColors = ['#FF69B4', '#FFD700', '#FF6B6B', '#FF9FF3', '#48DBFB'];
+        for (let x = -(frame * speed * 0.6) % 80; x < w; x += 80) {
+            const flowerY = groundY + 18 + Math.sin(x * 0.1) * 3;
+            ctx.fillStyle = flowerColors[Math.floor(Math.abs(x) / 80) % flowerColors.length];
+            ctx.beginPath();
+            ctx.arc(x, flowerY, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, flowerY, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Floating confetti particles (background)
         particles.filter(p => p.isCode).forEach(p => {
-            ctx.fillStyle = Art.PALETTE.grey;
-            ctx.globalAlpha = Math.min(1, p.life / 50) * 0.3;
-            ctx.font = '10px monospace';
+            ctx.globalAlpha = Math.min(1, p.life / 50) * 0.6;
+            ctx.font = '14px monospace';
             ctx.fillText(p.text, p.x, p.y);
         });
         ctx.globalAlpha = 1;
@@ -475,78 +551,102 @@ const PonyRide = (() => {
         if (bossActive && boss) {
             Art.drawBoss(ctx, boss.name, boss.x, boss.y, frame, bossHP, bossMaxHP);
 
-            // Boss attack text
-            ctx.fillStyle = Art.PALETTE.white;
-            ctx.font = 'bold 12px monospace';
+            // Boss attack text (bouncy!)
+            ctx.fillStyle = '#E74C9C';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 14px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('Press X/Z to attack!', w / 2, 30);
+            const attackY = 30 + Math.sin(frame * 0.1) * 3;
+            ctx.strokeText('Press X/Z to bonk!', w / 2, attackY);
+            ctx.fillText('Press X/Z to bonk!', w / 2, attackY);
             ctx.textAlign = 'left';
         }
 
-        // Pony
+        // Pony (with squash-and-stretch!)
         const ponyX = 80;
         const ponyActualY = groundY - 30 + ponyY;
+        ctx.save();
         if (ducking) {
-            ctx.save();
             ctx.translate(ponyX, ponyActualY + 10);
-            ctx.scale(1, 0.6);
+            ctx.scale(1.2, 0.6);
             ctx.translate(-ponyX, -(ponyActualY + 10));
+        } else if (squashTimer > 0) {
+            // Landing squash
+            const squashAmount = squashTimer / 8;
+            ctx.translate(ponyX, ponyActualY + 5);
+            ctx.scale(1 + squashAmount * 0.15, 1 - squashAmount * 0.15);
+            ctx.translate(-ponyX, -(ponyActualY + 5));
+        } else if (!grounded) {
+            // Stretch while in air
+            ctx.translate(ponyX, ponyActualY);
+            ctx.scale(0.9, 1.1);
+            ctx.translate(-ponyX, -ponyActualY);
         }
         Art.drawPonyOnCanvas(ctx, ponyX, ponyActualY, frame, ducking ? 0.8 : 1);
-        if (ducking) ctx.restore();
+        ctx.restore();
 
         // Non-code particles (sparkles, effects)
         particles.filter(p => !p.isCode).forEach(p => {
             ctx.globalAlpha = Math.min(1, p.life / 20);
-            ctx.font = '14px monospace';
-            ctx.fillStyle = Art.PALETTE.cyan;
+            ctx.font = '16px monospace';
             ctx.fillText(p.text, p.x, p.y);
         });
         ctx.globalAlpha = 1;
 
-        // HUD
-        ctx.fillStyle = Art.PALETTE.void;
-        ctx.globalAlpha = 0.7;
-        ctx.fillRect(10, 10, 250, 50);
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = Art.PALETTE.purple;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(10, 10, 250, 50);
+        // HUD (bright, rounded feel)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.beginPath();
+        const hudR = 10;
+        ctx.moveTo(10 + hudR, 10);
+        ctx.lineTo(260 - hudR, 10);
+        ctx.arcTo(260, 10, 260, 10 + hudR, hudR);
+        ctx.lineTo(260, 60 - hudR);
+        ctx.arcTo(260, 60, 260 - hudR, 60, hudR);
+        ctx.lineTo(10 + hudR, 60);
+        ctx.arcTo(10, 60, 10, 60 - hudR, hudR);
+        ctx.lineTo(10, 10 + hudR);
+        ctx.arcTo(10, 10, 10 + hudR, 10, hudR);
+        ctx.fill();
+        ctx.strokeStyle = '#FF69B4';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-        ctx.fillStyle = Art.PALETTE.cyan;
-        ctx.font = '12px monospace';
+        ctx.fillStyle = '#E74C9C';
+        ctx.font = 'bold 12px monospace';
         ctx.fillText(`LOC Deployed: ${Math.floor(distance)}`, 20, 28);
+        ctx.fillStyle = '#9B59B6';
         ctx.fillText(`Dependencies: ${collected}`, 20, 44);
 
-        ctx.fillStyle = Art.PALETTE.white;
+        ctx.fillStyle = '#888';
         ctx.font = '10px monospace';
         ctx.fillText(`Zone: ${ZONE_NAMES[currentZone]}`, 20, 56);
 
-        // Vignette
-        const vignette = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, h * 0.8);
-        vignette.addColorStop(0, 'rgba(0,0,0,0)');
-        vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
-        ctx.fillStyle = vignette;
-        ctx.fillRect(0, 0, w, h);
+        // NO vignette in cartoon mode! Bright and open!
 
-        // Death overlay
+        // Death overlay (cartoon bonk!)
         if (!alive) {
-            ctx.fillStyle = 'rgba(10,0,0,0.7)';
+            ctx.fillStyle = 'rgba(255, 240, 245, 0.8)';
             ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = Art.PALETTE.red;
-            ctx.font = 'bold 24px monospace';
+
+            ctx.fillStyle = '#E74C9C';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 4;
+            ctx.font = 'bold 28px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('APPLICATION CRASHED', w / 2, h / 2 - 20);
-            ctx.font = '14px monospace';
-            ctx.fillStyle = Art.PALETTE.orange;
-            ctx.fillText('Redeploying...', w / 2, h / 2 + 10);
+            ctx.strokeText('BONK! PONY DOWN!', w / 2, h / 2 - 20);
+            ctx.fillText('BONK! PONY DOWN!', w / 2, h / 2 - 20);
+
+            ctx.font = '16px monospace';
+            ctx.fillStyle = '#9B59B6';
+            ctx.fillText('Oopsie! Redeploying... 🐴💫', w / 2, h / 2 + 15);
             ctx.textAlign = 'left';
         }
 
         // Controls hint
         if (distance < 200 && alive) {
-            ctx.fillStyle = Art.PALETTE.grey;
-            ctx.font = '11px monospace';
+            ctx.fillStyle = '#9B59B6';
+            ctx.font = '12px monospace';
             ctx.textAlign = 'center';
             ctx.globalAlpha = Math.max(0, 1 - distance / 200);
             ctx.fillText('SPACE/UP: Jump | DOWN: Duck | ESC: Exit', w / 2, h - 20);
