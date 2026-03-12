@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deploy Pony: Enterprise Nightmares (Cartoon Edition!)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>🐴</text></svg>">
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Vignette overlay -->
+    <div id="vignette"></div>
+
+    <!-- Floating code particles (spawned by JS) -->
+    <div id="particles-container"></div>
+
+    <!-- ==================== LOADING SCREEN ==================== -->
+    <div id="loading-screen" class="game-screen active">
+        <div class="loading-content">
+            <div class="loading-title">[ DEPLOY PONY: ENTERPRISE NIGHTMARES ]</div>
+            <div class="loading-bar-container">
+                <div class="loading-bar"></div>
+            </div>
+            <div id="loading-text">Initializing AbstractSingletonProxyFactoryBean...</div>
+        </div>
+    </div>
+
+    <!-- ==================== MENU SCREEN ==================== -->
+    <div id="menu-screen" class="game-screen">
+        <div class="menu-content">
+            <div class="menu-logo" id="menu-logo"></div>
+            <div class="menu-lore" id="menu-lore"></div>
+            <div class="menu-buttons">
+                <button class="menu-btn primary" onclick="Game.startNewGame()">
+                    > New Deployment
+                </button>
+                <button class="menu-btn" id="continue-btn" onclick="Game.continueGame()" style="display:none">
+                    > Resume Deployment
+                </button>
+                <a href="../" class="menu-btn" style="text-decoration:none;display:inline-block;text-align:center">
+                    &lt; Switch Version
+                </a>
+            </div>
+            <div class="menu-subtitle">
+                A Super Cute Cartoon Java Deployment Simulator 🐴✨<br>
+                © 2024 AbstractSingletonProxyFactoryBean LLC
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CARE SCREEN ==================== -->
+    <div id="care-screen" class="game-screen">
+        <div class="care-header">
+            <span class="care-title">[ PONY CARE TERMINAL ]</span>
+            <div class="care-controls">
+                <button class="icon-btn" onclick="Audio.toggleMute()" title="Toggle Sound">SND</button>
+                <button class="icon-btn" onclick="Game.save()" title="Save">SAVE</button>
+                <button class="icon-btn" onclick="Game.setState(Game.STATES.MENU)" title="Menu">MENU</button>
+            </div>
+        </div>
+
+        <div class="pony-area">
+            <div id="dialogue-bubble"></div>
+            <div id="pony-display"></div>
+            <div id="poop-container"></div>
+        </div>
+
+        <div class="stats-area">
+            <div id="pony-stats"></div>
+        </div>
+
+        <div class="actions-area" id="pony-actions"></div>
+
+        <div class="event-log-area">
+            <div id="event-log"></div>
+        </div>
+    </div>
+
+    <!-- ==================== RIDE SCREEN ==================== -->
+    <div id="ride-screen" class="game-screen">
+        <canvas id="ride-canvas"></canvas>
+        <div id="ride-zone"></div>
+    </div>
+
+    <!-- ==================== DEPLOY MINI-GAME SCREEN ==================== -->
+    <div id="deploy-screen" class="game-screen">
+        <div id="deploy-game-area"></div>
+    </div>
+
+    <!-- ==================== GAME OVER SCREEN ==================== -->
+    <div id="gameover-screen" class="game-screen">
+        <div class="gameover-content">
+            <div class="gameover-title">BUILD FAILED</div>
+            <div class="gameover-message" id="gameover-message"></div>
+            <div class="gameover-stats" id="gameover-stats"></div>
+            <div class="gameover-score" id="gameover-score"></div>
+            <div class="menu-buttons">
+                <button class="menu-btn primary" onclick="Game.restartGame()">
+                    > Redeploy from Scratch
+                </button>
+                <button class="menu-btn" onclick="Game.setState(Game.STATES.MENU)">
+                    > Return to Main Menu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="art.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+<script src="pony-care.js"></script>
+<script src="pony-ride.js"></script>
+<script src="deploy-games.js"></script>
+<script>
+    // ---- INITIALIZATION ----
+    document.addEventListener('DOMContentLoaded', () => {
+        // Spawn floating code particles in the background
+        const particlesContainer = document.getElementById('particles-container');
+        function spawnParticle() {
+            const el = document.createElement('div');
+            el.className = 'floating-code';
+            el.textContent = Art.createFloatingCode();
+            el.style.top = (Math.random() * 70 + 5) + '%';
+            el.style.animationDuration = (12 + Math.random() * 10) + 's';
+            el.style.animationDelay = (Math.random() * 5) + 's';
+            el.style.fontSize = (8 + Math.random() * 6) + 'px';
+            particlesContainer.appendChild(el);
+            el.addEventListener('animationend', () => el.remove());
+        }
+
+        setInterval(spawnParticle, 2000);
+        for (let i = 0; i < 8; i++) spawnParticle();
+
+        // Setup menu
+        Game.on('stateChange', ({ to }) => {
+            if (to === Game.STATES.MENU) {
+                setupMenu();
+            }
+            if (to === Game.STATES.GAME_OVER) {
+                setupGameOver();
+            }
+        });
+
+        // Initialize pony care module
+        PonyCare.init();
+
+        // Start!
+        Game.init();
+
+        // Resume context on first click (for audio)
+        document.addEventListener('click', () => {
+            Audio.init();
+        }, { once: true });
+    });
+
+    function setupMenu() {
+        // Logo
+        const logoEl = document.getElementById('menu-logo');
+        if (logoEl) logoEl.innerHTML = Art.titleLogo();
+
+        // Lore
+        const loreEl = document.getElementById('menu-lore');
+        if (loreEl) {
+            loreEl.innerHTML = Game.getLore().map(line => `<p>${line}</p>`).join('');
+        }
+
+        // Show continue button if save exists
+        const continueBtn = document.getElementById('continue-btn');
+        if (continueBtn) {
+            continueBtn.style.display = Game.load() ? 'block' : 'none';
+        }
+    }
+
+    function setupGameOver() {
+        const msgEl = document.getElementById('gameover-message');
+        const statsEl = document.getElementById('gameover-stats');
+        const scoreEl = document.getElementById('gameover-score');
+
+        if (msgEl) msgEl.textContent = Game.getDeathMessage();
+
+        if (statsEl) {
+            const pony = Game.getPony();
+            statsEl.innerHTML = `
+                Pony: ${pony ? pony.name : 'Unknown'}<br>
+                Enterprise Level: ${pony ? pony.level : 0}<br>
+                Total Deployments: ${Game.getTotalDeploys()}<br>
+                Failed Deployments: ${Game.getFailedDeploys()}<br>
+                Exceptions Encountered: ${pony ? pony.exceptions.length : 0}
+            `;
+        }
+
+        if (scoreEl) {
+            scoreEl.textContent = `Enterprise Value Generated: $${Game.getScore().toLocaleString()}.00 (before consulting fees)`;
+        }
+    }
+</script>
+
+</body>
+</html>

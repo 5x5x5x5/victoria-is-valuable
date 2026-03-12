@@ -187,11 +187,11 @@ const Game = (() => {
             failedDeploys,
             savedAt: Date.now(),
         };
-        localStorage.setItem('deployPonySave', JSON.stringify(data));
+        localStorage.setItem('deployPonySave_classic', JSON.stringify(data));
     }
 
     function load() {
-        const raw = localStorage.getItem('deployPonySave');
+        const raw = localStorage.getItem('deployPonySave_classic');
         if (!raw) return false;
         try {
             const data = JSON.parse(raw);
@@ -206,7 +206,7 @@ const Game = (() => {
     }
 
     function clearSave() {
-        localStorage.removeItem('deployPonySave');
+        localStorage.removeItem('deployPonySave_classic');
     }
 
     // ---- INITIALIZATION ----
