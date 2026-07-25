@@ -56,6 +56,10 @@ const PonyCare = (() => {
         ],
     };
 
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
     function init() {
         ponyContainer = document.getElementById('pony-display');
         statsContainer = document.getElementById('pony-stats');
@@ -154,7 +158,7 @@ const PonyCare = (() => {
         };
 
         statsContainer.innerHTML = `
-            <div class="pony-name">${pony.name}</div>
+            <div class="pony-name">${escapeHtml(pony.name)}</div>
             <div class="pony-level">Enterprise Level ${pony.level} | XP: ${pony.xp}/${pony.level * 100}</div>
             ${statBar('Hunger (XML)', pony.hunger, '📄', Art.PALETTE.green)}
             ${statBar('Happiness (Deploys)', pony.happiness, '🚀', Art.PALETTE.cyan)}
@@ -165,7 +169,7 @@ const PonyCare = (() => {
             </div>
             ${pony.exceptions.length > 0 ? `<div class="exception-list">
                 <div class="exception-header">Active Exceptions:</div>
-                ${pony.exceptions.slice(-3).map(e => `<div class="exception-item">⚠ ${e.name}</div>`).join('')}
+                ${pony.exceptions.slice(-3).map(e => `<div class="exception-item">⚠ ${escapeHtml(e.name)}</div>`).join('')}
             </div>` : ''}
         `;
     }

@@ -8,6 +8,7 @@ const Audio = (() => {
     let masterGain = null;
     let ambientOsc = null;
     let ambientGain = null;
+    let ambientNodes = [];
     let muted = false;
 
     function init() {
@@ -71,13 +72,25 @@ const Audio = (() => {
         osc2.connect(gain2);
         gain2.connect(masterGain);
         osc2.start();
+
+        // Track all oscillators for cleanup
+        ambientNodes = [ambientOsc, lfo, osc2];
     }
 
     function stopAmbient() {
-        if (ambientOsc) {
-            ambientOsc.stop();
-            ambientOsc = null;
+        ambientNodes.forEach(osc => {
+            try {
+                osc.stop();
+            } catch (e) {
+                // Already stopped, ignore
+            }
+        });
+        if (ambientGain) {
+            ambientGain.disconnect();
         }
+        ambientNodes = [];
+        ambientOsc = null;
+        ambientGain = null;
     }
 
     // ---- Clip-clop hoofbeats ----

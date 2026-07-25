@@ -55,7 +55,7 @@
         <div class="care-header">
             <span class="care-title">[ PONY CARE TERMINAL ]</span>
             <div class="care-controls">
-                <button class="icon-btn" onclick="Audio.toggleMute()" title="Toggle Sound">SND</button>
+                <button class="icon-btn" onclick="this.classList.toggle('muted', Audio.toggleMute()); this.textContent = this.classList.contains('muted') ? '🔇 MUTED' : '🔊 SND'" title="Toggle Sound">SND</button>
                 <button class="icon-btn" onclick="Game.save()" title="Save">SAVE</button>
                 <button class="icon-btn" onclick="Game.setState(Game.STATES.MENU)" title="Menu">MENU</button>
             </div>
