@@ -25,7 +25,7 @@ Two parallel implementations of the same game with different aesthetics:
 - `classic/` — dark Hollow Knight-inspired theme
 - `cartoon/` — bright pastel reskin
 
-They share identical structure and module APIs but **every file differs** (palettes, copy/flavor text, physics tuning). A gameplay/logic change usually needs to be applied to both directories, keeping each version's tone; a purely cosmetic change belongs to one.
+They share identical structure and module APIs but **every file differs except `audio.js`, which is byte-identical** (palettes, copy/flavor text, physics tuning). A gameplay/logic change usually needs to be applied to both directories, keeping each version's tone; a purely cosmetic change belongs to one.
 
 Within each version, plain `<script>` tags load IIFE modules that communicate as globals (no ES modules, no imports):
 

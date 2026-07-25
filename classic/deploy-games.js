@@ -6,8 +6,19 @@
 const DeployGames = (() => {
     let container = null;
     let currentGame = null;
+    let currentCleanup = null;
 
     const GAMES = ['catapult', 'xmlPuzzle', 'dependencyHell', 'theBuild'];
+
+    // Fisher-Yates shuffle (returns a new array; does not mutate arr)
+    function shuffle(arr) {
+        const result = [...arr];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
+        return result;
+    }
 
     function startRandom() {
         container = document.getElementById('deploy-game-area');
@@ -29,6 +40,11 @@ const DeployGames = (() => {
     }
 
     function endGame(success) {
+        if (currentCleanup) {
+            currentCleanup();
+            currentCleanup = null;
+        }
+
         if (success) {
             Audio.deploySuccess();
             Game.modifyStat('hunger', 15);
@@ -48,9 +64,22 @@ const DeployGames = (() => {
 
         Game.save();
         setTimeout(() => {
+            const pony = Game.getPony();
+            if (!pony || !pony.alive) return;
             Game.setState(Game.STATES.CARE);
             PonyCare.updateStats();
         }, 1500);
+    }
+
+    function abort() {
+        if (currentCleanup) {
+            currentCleanup();
+            currentCleanup = null;
+        }
+        Audio.click();
+        PonyCare.logEvent('Deployment aborted. Rollback complete. No pony was harmed.', 'info');
+        Game.setState(Game.STATES.CARE);
+        PonyCare.updateStats();
     }
 
     // =========================================================
@@ -67,10 +96,15 @@ const DeployGames = (() => {
         let landed = false;
         let animFrame = null;
 
+        currentCleanup = () => {
+            if (animFrame) cancelAnimationFrame(animFrame);
+        };
+
         container.innerHTML = `
             <div class="minigame-header">
                 <h2>WAR File Catapult</h2>
                 <p>Launch the .war file onto the Tomcat server!</p>
+                <button class="action-btn" onclick="DeployGames.abort()">&gt; ctrl+c (abort)</button>
             </div>
             <canvas id="catapult-canvas" width="700" height="350"></canvas>
             <div class="catapult-controls">
@@ -249,18 +283,26 @@ const DeployGames = (() => {
             { text: '</beans>', order: 5 },
         ];
 
-        // Shuffle
-        const shuffled = [...tags].sort(() => Math.random() - 0.5);
+        // Shuffle (retry if we accidentally land on the solved order)
+        let shuffled;
+        do {
+            shuffled = shuffle(tags);
+        } while (shuffled.every((t, i) => t.order === i));
         let slots = shuffled.map((t, i) => ({ ...t, currentPos: i }));
         let selectedIndex = null;
         let timeLeft = 30;
         let timerInterval = null;
+
+        currentCleanup = () => {
+            clearInterval(timerInterval);
+        };
 
         function renderPuzzle() {
             container.innerHTML = `
                 <div class="minigame-header">
                     <h2>XML Configuration Puzzle</h2>
                     <p>Arrange the XML tags in the correct order! Time: <span id="xml-timer" class="${timeLeft < 10 ? 'timer-warning' : ''}">${timeLeft}s</span></p>
+                    <button class="action-btn" onclick="DeployGames.abort()">&gt; ctrl+c (abort)</button>
                 </div>
                 <div class="xml-slots">
                     ${slots.map((tag, i) => `
@@ -327,9 +369,9 @@ const DeployGames = (() => {
         ];
 
         // Create pairs and shuffle
-        const cards = [...deps, ...deps]
-            .map((dep, i) => ({ dep, id: i, flipped: false, matched: false }))
-            .sort(() => Math.random() - 0.5);
+        const cards = shuffle(
+            [...deps, ...deps].map((dep, i) => ({ dep, id: i, flipped: false, matched: false }))
+        );
 
         let firstFlip = null;
         let secondFlip = null;
@@ -338,11 +380,14 @@ const DeployGames = (() => {
         let attempts = 0;
         const maxAttempts = 15;
 
+        currentCleanup = () => {};
+
         function renderCards() {
             container.innerHTML = `
                 <div class="minigame-header">
                     <h2>Dependency Hell</h2>
                     <p>Match the dependency versions! Attempts: ${attempts}/${maxAttempts} | Matches: ${matchesFound}/${deps.length}</p>
+                    <button class="action-btn" onclick="DeployGames.abort()">&gt; ctrl+c (abort)</button>
                 </div>
                 <div class="dep-grid">
                     ${cards.map((card, i) => `
@@ -389,6 +434,8 @@ const DeployGames = (() => {
 
                     if (matchesFound === deps.length) {
                         endGame(true);
+                    } else if (attempts >= maxAttempts) {
+                        endGame(false);
                     }
                 } else {
                     // No match
@@ -419,8 +466,15 @@ const DeployGames = (() => {
         let target = 100;
         let clicks = 0;
         let buildInterval = null;
+        let timerInterval = null;
         let setbacks = 0;
+        let timeLeft = 45;
         let currentMessage = 'Initializing Maven build...';
+
+        currentCleanup = () => {
+            clearInterval(buildInterval);
+            clearInterval(timerInterval);
+        };
 
         const BUILD_MESSAGES = [
             'Downloading the internet...',
@@ -454,6 +508,7 @@ const DeployGames = (() => {
                 <div class="minigame-header">
                     <h2>The Build</h2>
                     <p>Click to help the build along! Fight the setbacks!</p>
+                    <button class="action-btn" onclick="DeployGames.abort()">&gt; ctrl+c (abort)</button>
                 </div>
                 <div class="build-area">
                     <div class="build-terminal">
@@ -466,7 +521,7 @@ const DeployGames = (() => {
                         </div>
                     </div>
                     <div class="build-stats">
-                        Clicks: ${clicks} | Setbacks: ${setbacks}
+                        Clicks: ${clicks} | Setbacks: ${setbacks} | Time: ${timeLeft}s
                     </div>
                     <button class="action-btn build-click-btn" id="build-btn" onclick="DeployGames._buildClick()">
                         <span class="btn-prompt">&gt;</span> BUILD HARDER
@@ -482,6 +537,7 @@ const DeployGames = (() => {
             currentMessage = BUILD_MESSAGES[Math.floor(Math.random() * BUILD_MESSAGES.length)];
             if (progress >= target) {
                 clearInterval(buildInterval);
+                clearInterval(timerInterval);
                 endGame(true);
                 return;
             }
@@ -508,6 +564,7 @@ const DeployGames = (() => {
                 progress += 0.5;
                 if (progress >= target) {
                     clearInterval(buildInterval);
+                    clearInterval(timerInterval);
                     endGame(true);
                     return;
                 }
@@ -516,12 +573,27 @@ const DeployGames = (() => {
             }
         }, 2000);
 
+        // Build timeout countdown
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(buildInterval);
+                clearInterval(timerInterval);
+                currentMessage = 'BUILD TIMED OUT after 6-8 business sprints.';
+                renderBuild();
+                endGame(false);
+                return;
+            }
+            renderBuild();
+        }, 1000);
+
         renderBuild();
     }
 
     return {
         startRandom,
         startGame,
+        abort,
         _catapultLaunch: null,
         _xmlSelect: null,
         _xmlCheck: null,

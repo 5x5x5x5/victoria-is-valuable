@@ -63,6 +63,7 @@ const Game = (() => {
     let statDecayInterval = null;
     let randomEventInterval = null;
     let lastEventText = '';
+    let lastDeathCause = null;
 
     // ---- PONY STATE ----
     function createPony(name) {
@@ -124,7 +125,11 @@ const Game = (() => {
         // Check death conditions
         if (pony.hunger <= 0 || pony.happiness <= 0 || pony.energy <= 0) {
             pony.alive = false;
-            emit('ponyDied', { cause: stat });
+            // The stat passed in isn't necessarily the one that hit zero -
+            // figure out the actual culprit for the death message.
+            lastDeathCause = pony.hunger <= 0 ? 'hunger' : (pony.happiness <= 0 ? 'happiness' : 'energy');
+            emit('ponyDied', { cause: lastDeathCause });
+            Audio.stopAmbient();
             setState(STATES.GAME_OVER);
         }
 
@@ -132,7 +137,7 @@ const Game = (() => {
     }
 
     function addXP(amount) {
-        if (!pony) return;
+        if (!pony || !pony.alive) return;
         pony.xp += amount;
         const xpNeeded = pony.level * 100;
         if (pony.xp >= xpNeeded) {
@@ -153,6 +158,7 @@ const Game = (() => {
     // ---- STAT DECAY ----
     function startStatDecay() {
         if (statDecayInterval) clearInterval(statDecayInterval);
+        let decayTick = 0;
         statDecayInterval = setInterval(() => {
             if (currentState === STATES.CARE && pony && pony.alive) {
                 modifyStat('hunger', -2);
@@ -160,6 +166,18 @@ const Game = (() => {
                 modifyStat('energy', -1);
                 if (Math.random() < 0.05) {
                     modifyStat('happiness', -3);
+                }
+
+                // Tech debt: neglected cleanliness silently eats happiness
+                if (pony.cleanliness <= 0) {
+                    decayTick++;
+                    modifyStat('happiness', -3);
+                    if (Math.random() < 0.15) {
+                        addException('TechnicalDebtException');
+                    }
+                    if (decayTick % 5 === 0) {
+                        emit('randomEvent', { text: "Oh no! The tech debt gremlins are nibbling pony's happiness! Time for grooming! 🧽✨", stat: 'happiness', delta: -3 });
+                    }
                 }
             }
         }, 3000);
@@ -275,7 +293,15 @@ const Game = (() => {
     }
 
     function getDeathMessage() {
-        return DEATH_MESSAGES[Math.floor(Math.random() * DEATH_MESSAGES.length)];
+        const base = DEATH_MESSAGES[Math.floor(Math.random() * DEATH_MESSAGES.length)];
+        const causeLabels = {
+            hunger: 'got the hungry-wobbles! (ran out of XML cookies! 🍪)',
+            happiness: 'felt extra sad! (morale sparkle depleted! 💔)',
+            energy: 'ran out of energy! (nap time was overdue! 😴)',
+        };
+        const label = causeLabels[lastDeathCause];
+        if (!label) return base;
+        return `${base} — What happened: pony ${label}`;
     }
 
     function getLore() {
@@ -293,7 +319,7 @@ const Game = (() => {
         getPony: () => pony,
         getScore: () => score,
         setScore: (s) => { score = s; },
-        addScore: (s) => { score += s; },
+        addScore: (s) => { if (!pony || !pony.alive) return; score += s; },
         getTotalDeploys: () => totalDeploys,
         incrementDeploys: () => { totalDeploys++; },
         incrementFailedDeploys: () => { failedDeploys++; },

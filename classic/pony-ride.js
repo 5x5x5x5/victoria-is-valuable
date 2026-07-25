@@ -19,6 +19,7 @@ const PonyRide = (() => {
     let speed = 3;
     let collected = 0;
     let alive = true;
+    let ended = false; // guards endRide against double-fire (ESC during death sequence)
 
     // World
     const GROUND_Y = 0.75; // fraction of canvas height
@@ -55,6 +56,7 @@ const PonyRide = (() => {
         speed = 3;
         collected = 0;
         alive = true;
+        ended = false;
         obstacles = [];
         collectibles = [];
         bgElements = [];
@@ -95,6 +97,7 @@ const PonyRide = (() => {
     // ---- INPUT ----
     let keyHandler = null;
     let touchHandler = null;
+    let resizeHandler = null;
 
     function setupInput() {
         keyHandler = (e) => {
@@ -106,7 +109,7 @@ const PonyRide = (() => {
                 e.preventDefault();
                 ducking = true;
             }
-            if (e.code === 'Escape') {
+            if (e.code === 'Escape' && alive) {
                 endRide(false);
             }
             // Attack boss with X or Z
@@ -134,12 +137,18 @@ const PonyRide = (() => {
             }
         };
         canvas.addEventListener('touchstart', touchHandler);
+
+        resizeHandler = () => {
+            if (running) resizeCanvas();
+        };
+        window.addEventListener('resize', resizeHandler);
     }
 
     function removeInput() {
         if (keyHandler) window.removeEventListener('keydown', keyHandler);
         if (window._rideKeyUp) window.removeEventListener('keyup', window._rideKeyUp);
         if (touchHandler && canvas) canvas.removeEventListener('touchstart', touchHandler);
+        if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     }
 
     function jump() {
@@ -242,7 +251,7 @@ const PonyRide = (() => {
             const type = OBSTACLE_TYPES[Math.floor(Math.random() * OBSTACLE_TYPES.length)];
             obstacles.push({
                 x: canvas.width + 50,
-                y: type === 'OutOfMemoryError' ? groundY - 80 - Math.random() * 60 : groundY,
+                y: type === 'OutOfMemoryError' ? groundY - 55 - Math.random() * 8 : groundY,
                 type,
                 width: 40,
                 height: type === 'OutOfMemoryError' ? 36 : 30,
@@ -294,12 +303,13 @@ const PonyRide = (() => {
         const ponyX = 80;
         const ponyActualY = groundY - 30 + ponyY;
         const ponyW = ducking ? 35 : 30;
-        const ponyH = ducking ? 20 : 40;
+        const ponyTop = ducking ? ponyActualY + 15 : ponyActualY;
+        const ponyH = ducking ? 25 : 40;
 
         // Obstacle collisions
         for (const o of obstacles) {
             if (ponyX + ponyW > o.x && ponyX < o.x + o.width &&
-                ponyActualY + ponyH > o.y && ponyActualY < o.y + o.height) {
+                ponyTop + ponyH > o.y && ponyTop < o.y + o.height) {
                 die(o.type);
                 return;
             }
@@ -361,6 +371,8 @@ const PonyRide = (() => {
     }
 
     function endRide(died) {
+        if (ended) return;
+        ended = true;
         stop();
 
         // Apply rewards
@@ -378,6 +390,13 @@ const PonyRide = (() => {
 
         Game.incrementDeploys();
         if (died) Game.incrementFailedDeploys();
+
+        // If the pony didn't survive these penalties, Game already switched
+        // to GAME_OVER — don't drag the player back to a dead-pony care screen.
+        const pony = Game.getPony();
+        if (!pony || !pony.alive) {
+            return;
+        }
 
         // Return to care mode
         Game.setState(Game.STATES.CARE);

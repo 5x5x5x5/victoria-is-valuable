@@ -262,6 +262,11 @@ body {
     color: var(--cyan);
 }
 
+.icon-btn.muted {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
 .pony-area {
     position: relative;
     display: flex;
@@ -936,4 +941,18 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--purple);
+}
+
+/* ---- REDUCED MOTION ---- */
+@media (prefers-reduced-motion: reduce) {
+    .floating-code,
+    .particle {
+        animation: none !important;
+        display: none;
+    }
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
